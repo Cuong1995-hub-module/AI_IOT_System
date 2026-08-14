@@ -10,7 +10,10 @@ PORT = 1883
 # RFID CHECK-IN STATE
 # =========================
 
-# UID vừa quét, đang chờ giao diện Check-in xử lý
+# UID vừa quét gần nhất
+last_uid = None
+
+# UID hợp lệ đang chờ giao diện Check-in xử lý
 pending_uid = None
 
 
@@ -21,12 +24,16 @@ def on_connect(client, userdata, flags, reason_code, properties=None):
 
 def on_message(client, userdata, msg):
 
+    global last_uid
     global pending_uid
 
     uid = msg.payload.decode().strip()
 
     if not uid:
         return
+
+    # UID vừa quét - dùng cho User Management
+    last_uid = uid
 
     print(
         f"\n[RFID] UID: {uid}"

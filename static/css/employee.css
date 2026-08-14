@@ -45,9 +45,15 @@ body{
 .container{
 
     width:100%;
+    max-width:1200px;
+
     display:flex;
     justify-content:center;
-    align-items:center;
+    align-items:stretch;
+
+    gap:30px;
+
+    padding:20px;
 }
 
 /* ===========================
@@ -57,12 +63,21 @@ body{
 .card{
 
     width:520px;
-
+    flex-shrink:0;
     padding:55px;
 
     border-radius:30px;
 
-    background:rgba(8,20,70,.45);
+    background:rgba(15, 32, 82, 0.78);
+
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.22);
+
+    box-shadow:
+    0 25px 60px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.12);
 
     backdrop-filter:blur(20px);
 
@@ -73,6 +88,313 @@ body{
     text-align:center;
 
     color:white;
+}
+/* ===========================
+   TODAY'S CHECK-IN
+=========================== */
+
+.today-checkins{
+
+    width:450px;
+
+    max-height:620px;
+
+    padding:28px;
+
+    border-radius:30px;
+
+    background:rgba(10, 28, 75, 0.82);
+
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.22);
+
+    box-shadow:
+    0 25px 60px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.12);
+
+    backdrop-filter:blur(20px);
+
+    border:1px solid rgba(255,255,255,.15);
+
+    box-shadow:0 25px 60px rgba(0,0,0,.45);
+
+    color:white;
+
+    display:flex;
+
+    flex-direction:column;
+}
+
+.today-checkins-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    font-size:24px;
+
+    font-weight:bold;
+
+    padding-bottom:20px;
+
+    border-bottom:1px solid rgba(255,255,255,.15);
+}
+
+.today-checkins-list{
+
+    margin-top:15px;
+
+    overflow-y:auto;
+
+    flex:1;
+}
+
+.checkin-empty{
+
+    text-align:center;
+
+    color:#aabbd6;
+
+    padding:30px 10px;
+}
+/* ===========================
+   TODAY'S CHECK-IN ITEMS
+=========================== */
+
+.checkin-item {
+    padding:16px;
+    margin-bottom:12px;
+
+    border-radius:14px;
+
+    background:rgba(255,255,255,.13);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,.12);
+
+    transition:.25s;
+}
+
+.checkin-item:hover {
+
+    background:rgba(255,255,255,.14);
+
+    transform:translateX(-2px);
+
+}
+
+
+/* ===========================
+   STATUS COLORS
+=========================== */
+
+.checkin-item.approved {
+
+    border-left:4px solid #4CAF50;
+
+}
+
+.checkin-item.pending {
+
+    border-left:4px solid #FFC107;
+
+}
+
+.checkin-item.rejected {
+
+    border-left:4px solid #F44336;
+
+}
+
+
+/* ===========================
+   NAME + TIME
+=========================== */
+
+.checkin-item-main {
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin-bottom:10px;
+
+}
+
+.checkin-name {
+
+    font-size:17px;
+
+    font-weight:700;
+
+    color:white;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+
+}
+
+.checkin-time {
+
+    font-size:13px;
+
+    color:#C9DFFF;
+
+    white-space:nowrap;
+
+}
+
+
+/* ===========================
+   STATUS INFORMATION
+=========================== */
+
+.checkin-item-status {
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    flex-wrap:wrap;
+
+    font-size:13px;
+
+}
+
+
+/* AI */
+
+.ai-status {
+
+    padding:5px 9px;
+
+    border-radius:8px;
+
+    background:rgba(33,150,243,.18);
+
+    color:#67C8FF;
+
+    font-weight:600;
+
+}
+
+
+/* SIMILARITY */
+
+.similarity {
+
+    padding:5px 9px;
+
+    border-radius:8px;
+
+    background:rgba(76,175,80,.18);
+
+    color:#8CFFAE;
+
+    font-weight:bold;
+
+}
+
+
+/* ADMIN RESULT */
+
+.admin-status {
+
+    padding:5px 9px;
+
+    border-radius:8px;
+
+    background:rgba(255,255,255,.12);
+
+    color:#EAF2FF;
+
+    font-weight:600;
+
+}
+
+
+/* ===========================
+   SCROLLBAR
+=========================== */
+
+.today-checkins-list::-webkit-scrollbar {
+
+    width:6px;
+
+}
+
+.today-checkins-list::-webkit-scrollbar-track {
+
+    background:rgba(255,255,255,.05);
+
+    border-radius:10px;
+
+}
+
+.today-checkins-list::-webkit-scrollbar-thumb {
+
+    background:rgba(103,200,255,.45);
+
+    border-radius:10px;
+
+}
+
+.today-checkins-list::-webkit-scrollbar-thumb:hover {
+
+    background:rgba(103,200,255,.7);
+
+}
+
+
+/* ===========================
+   MOBILE
+=========================== */
+
+@media (max-width:900px) {
+
+    .container {
+
+        flex-direction:column;
+
+        max-height:100vh;
+
+        overflow-y:auto;
+
+    }
+
+    .card {
+
+        width:100%;
+
+        max-width:520px;
+
+    }
+
+    .today-checkins {
+
+        width:100%;
+
+        max-width:520px;
+
+        max-height:350px;
+
+    }
+
 }
 
 /* ===========================

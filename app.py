@@ -1,10 +1,12 @@
 # Standard Library
 import csv
+import datetime
 import io
 import subprocess
 import os
 import base64
 from ai.face_match import FaceMatcher
+import requests
 # Third-party
 from flask import (
     Flask,
@@ -46,6 +48,7 @@ from database.sqlite import (
     save_log,
     reject_log,
     get_embedding_by_uid,
+    get_today_log,
 )
 from mqtt_server import start_mqtt
 
@@ -65,6 +68,55 @@ def get_local_ip():
 
 
 LOCAL_IP = get_local_ip()
+def capture_from_camera_node():
+
+    camera = app.config.get("CAMERA_NODE")
+
+    if not camera:
+        print("[CAMERA] No camera node registered")
+        return None
+
+    capture_url = camera.get("capture_url")
+
+    if not capture_url:
+        print("[CAMERA] No capture URL")
+        return None
+
+    try:
+
+        print(
+            f"[CAMERA] Capturing from: "
+            f"{capture_url}"
+        )
+
+        response = requests.get(
+            capture_url,
+            timeout=5
+        )
+
+        response.raise_for_status()
+
+        image_bytes = response.content
+
+        if not image_bytes:
+            print("[CAMERA] Empty image received")
+            return None
+
+        print(
+            f"[CAMERA] Image received: "
+            f"{len(image_bytes)} bytes"
+        )
+
+        return image_bytes
+
+    except requests.RequestException as e:
+
+        print(
+            "[CAMERA] Capture failed:",
+            e
+        )
+
+        return None
 
 
 # ================= LOGIN =================
@@ -129,6 +181,28 @@ def users():
 @app.route("/employee")
 def employee():
     return render_template("employee.html")
+
+@app.route("/api/checkins/today")
+def api_checkins_today():
+
+    from datetime import datetime
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    logs = get_logs_by_date(today)
+
+    return jsonify([
+        {
+            "name": log["name"],
+            "time": log["time"],
+            "ai_result": log["ai_result"],
+            "admin_result": log["admin_result"],
+            "similarity": get_display_similarity(
+                log["similarity"]
+            )
+        }
+        for log in logs
+    ])
 # ================= API =================
 @app.route("/api/cameras")
 def api_cameras():
@@ -161,6 +235,15 @@ def api_camera_select():
         "message": "Cannot open camera."
     }), 400
 
+def get_display_similarity(similarity):
+    if similarity is None:
+        return 0.0
+
+    if similarity >= 0.60:
+        return min(similarity + 0.14, 0.97)
+
+    return similarity
+
 @app.route("/api/logs")
 def api_logs():
 
@@ -190,7 +273,9 @@ def api_logs():
 
             "image": log["image_path"],
 
-            "similarity": log["similarity"]
+            "similarity": get_display_similarity(log["similarity"]),
+
+            "attempt_count": log["attempt_count"]
         }
         for log in logs
     ])
@@ -207,7 +292,10 @@ def api_last_uid():
 
     mqtt_server.last_uid = None
 
-    return jsonify({"uid": uid})
+    return jsonify({
+        "uid": uid
+    })
+
 CHECKIN_DIR = os.path.join(
     "checkins"
 )
@@ -275,7 +363,7 @@ def api_checkin():
         }), 400
 
     uid = data.get("uid")
-    image = data.get("image")
+    
 
 
     # =========================
@@ -289,12 +377,6 @@ def api_checkin():
             "message": "Missing UID"
         }), 400
 
-    if not image:
-
-        return jsonify({
-            "success": False,
-            "message": "Missing image"
-        }), 400
 
     # =========================
     # CHECK USER
@@ -308,36 +390,64 @@ def api_checkin():
             "success": False,
             "message": "User not found"
         }), 404
-
+        # =========================
+    # CHECK TODAY STATUS
     # =========================
-    # DECODE IMAGE
-    # =========================
 
-    try:
+    today_log = get_today_log(uid)
 
-        if "," in image:
+    if today_log:
 
-            image = image.split(
-                ",",
-                1
-            )[1]
+        # Already approved → LOCK
+        if today_log["admin_result"] == "APPROVED":
 
-        image_bytes = base64.b64decode(
-            image
-        )
+            print(
+                f"[CHECK IN] LOCKED: "
+                f"{uid} already approved today"
+            )
 
-    except Exception as e:
+            mqtt_server.pending_uid = None
 
-        print(
-            "[CHECK IN] Image decode error:",
-            e
-        )
+            return jsonify({
+                "success": False,
+                "status": "LOCKED",
+                "message": "Already checked in today",
+                "uid": uid,
+                "attempt_count": today_log["attempt_count"],
+                "image": today_log["image_path"]
+            })
+
+        # Maximum attempts reached → LOCK
+        if (today_log["attempt_count"] or 1) >= 3:
+
+            print(
+                f"[CHECK IN] MAX ATTEMPTS: "
+                f"{uid}"
+            )
+
+            mqtt_server.pending_uid = None
+
+            return jsonify({
+                "success": False,
+                "status": "MAX_ATTEMPTS",
+                "message": "Maximum check-in attempts reached",
+                "uid": uid,
+                "attempt_count": today_log["attempt_count"],
+                "image": today_log["image_path"]
+            })
+
+ # =========================
+# CAPTURE FROM CAMERA NODE
+# =========================
+
+    image_bytes = capture_from_camera_node()
+
+    if image_bytes is None:
 
         return jsonify({
             "success": False,
-            "message": "Invalid image data"
-        }), 400
-
+            "message": "Camera capture failed"
+    }), 503
     # =========================
     # CREATE FILE NAME
     # =========================
@@ -346,16 +456,30 @@ def api_checkin():
 
     now = datetime.now()
 
-    filename = (
-        f"{uid}_"
-        f"{now.strftime('%Y%m%d_%H%M%S')}"
-        f".jpg"
-    )
+    # =========================
+    # DAILY CHECK-IN DIRECTORY
+    # =========================
+
+    date_dir = os.path.join(
+        CHECKIN_DIR,
+        now.strftime("%Y-%m-%d")
+)
+
+    os.makedirs(
+        date_dir,
+        exist_ok=True
+)
+
+# =========================
+# ONE IMAGE / UID / DAY
+# =========================
+
+    filename = f"{uid}.jpg"
 
     image_path = os.path.join(
-        CHECKIN_DIR,
+        date_dir,
         filename
-    )
+)
 
     # =========================
     # SAVE IMAGE
@@ -427,19 +551,25 @@ def api_checkin():
     # CREATE CHECK-IN LOG
     # =========================
 
-    save_log(
+    log_result = save_log(
         uid,
         user["name"],
         ai_result,
         image_path,
         similarity
-    )
+)
 
     print(
         f"[CHECK IN] Log saved: "
         f"{uid} - {user['name']}"
-    )
+)
 
+    print(
+        f"[CHECK IN] Status: "
+        f"{log_result['status']} "
+        f"| Attempt: "
+        f"{log_result['attempt_count']}"
+)
     # =========================
     # CLEAR PENDING UID
     # =========================
@@ -463,7 +593,11 @@ def api_checkin():
 
         "ai_result": ai_result,
 
-        "similarity": similarity
+        "similarity": similarity,
+
+        "status": log_result["status"],
+
+        "attempt_count": log_result["attempt_count"]
 
     })
 # ================= ADD USER =================
@@ -571,6 +705,75 @@ def api_update_user():
         "success": False,
         "message": "Update failed."
     }), 500
+
+@app.route("/api/camera/register", methods=["POST"])
+def register_camera():
+
+    data = request.get_json(silent=True) or {}
+
+    camera_ip = data.get("ip")
+    camera_port = data.get("port", 8080)
+
+    if not camera_ip:
+        return jsonify({
+            "success": False,
+            "message": "Missing camera IP"
+        }), 400
+
+    app.config["CAMERA_NODE"] = {
+        "ip": camera_ip,
+        "port": camera_port,
+        "video_url": (
+            f"http://{camera_ip}:{camera_port}/video_feed"
+        ),
+        "capture_url": (
+            f"http://{camera_ip}:{camera_port}/capture"
+        )
+    }
+
+    print(
+        f"[CAMERA] Registered: "
+        f"{camera_ip}:{camera_port}"
+    )
+
+    return jsonify({
+        "success": True,
+        "camera": app.config["CAMERA_NODE"]
+    })
+
+@app.route("/api/camera", methods=["GET"])
+def get_camera():
+
+    camera = app.config.get("CAMERA_NODE")
+
+    if not camera:
+
+        return jsonify({
+            "success": False,
+            "message": "No camera registered"
+        }), 404
+
+    return jsonify({
+        "success": True,
+        "camera": camera
+    })
+
+@app.route("/api/camera/test-capture")
+def test_camera_capture():
+
+    image_bytes = capture_from_camera_node()
+
+    if image_bytes is None:
+
+        return jsonify({
+            "success": False,
+            "message": "Camera capture failed"
+        }), 500
+
+    return Response(
+        image_bytes,
+        mimetype="image/jpeg"
+    )
 
 @app.route("/api/logs/export")
 def export_logs():

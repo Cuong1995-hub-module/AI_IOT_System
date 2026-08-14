@@ -19,6 +19,7 @@
 
 <div class="container">
 
+    <!-- LEFT: MAIN CHECK-IN -->
     <div class="card">
 
         <h1>
@@ -34,27 +35,41 @@
         </div>
 
         <div class="status">
-
             System Ready
-
         </div>
 
         <button id="btnCheckin">
-
             CHECK IN
-
         </button>
 
         <div class="footer">
-
             RFID • Face Recognition • AI • IoT
+        </div>
+
+    </div>
+
+
+    <!-- RIGHT: TODAY'S CHECK-IN -->
+    <div class="today-checkins">
+
+        <div class="today-checkins-header">
+            <span>📋</span>
+            <span>Today's Check-in</span>
+        </div>
+
+        <div
+            id="todayCheckinsList"
+            class="today-checkins-list">
+
+            <div class="checkin-empty">
+                Chưa có lượt check-in hôm nay
+            </div>
 
         </div>
 
     </div>
 
 </div>
-
 
 <!-- ===========================
      CHECK IN POPUP
@@ -79,11 +94,10 @@
             Live Camera
         </div>
 
-        <video
+        <img
             id="cameraPreview"
-            autoplay
-            playsinline>
-        </video>
+            src=""
+            alt="Live Camera">
 
     </div>
 

@@ -111,20 +111,143 @@ def save_log(uid, name, result, image_path=None, similarity=0.0):
     cursor = conn.cursor()
     now = datetime.now()
 
+    MAX_ATTEMPTS = 3
+
+
     # =========================
-    # Auto Admin Decision
+    # Check today's existing log
     # =========================
 
-    AUTO_APPROVE_THRESHOLD = 0.70
+    cursor.execute("""
+        SELECT
+            id,
+            admin_result,
+            attempt_count
+        FROM logs
+        WHERE uid = ?
+        AND DATE(time) = DATE(?)
+        ORDER BY time DESC
+        LIMIT 1
+    """, (
+        uid,
+        now
+    ))
+
+    existing = cursor.fetchone()
+
+    # =========================
+    # Already checked today
+    # =========================
+
+    if existing:
+
+        log_id = existing[0]
+        current_admin = existing[1]
+        current_attempts = existing[2] or 1
+
+        # Already approved → LOCK
+        if current_admin == "APPROVED":
+
+            conn.close()
+
+            return {
+                "status": "LOCKED",
+                "log_id": log_id,
+                "attempt_count": current_attempts
+            }
+
+        # Maximum attempts reached → LOCK
+        if current_attempts >= MAX_ATTEMPTS:
+
+            conn.close()
+
+            return {
+                "status": "MAX_ATTEMPTS",
+                "log_id": log_id,
+                "attempt_count": current_attempts
+            }
+
+        # =========================
+        # Re-check
+        # =========================
+
+        new_attempts = current_attempts + 1
+
+    else:
+
+        # First attempt today
+        new_attempts = 1
+
+    # =========================
+    # AI threshold by attempt
+    # =========================
+
+    if new_attempts == 1:
+        auto_approve_threshold = 0.70
+
+    elif new_attempts == 2:
+        auto_approve_threshold = 0.65
+
+    else:
+        auto_approve_threshold = 0.60
+
+    # =========================
+    # Calculate Admin Decision
+    # =========================
 
     if name == "Unknown":
+
         admin_result = "REJECTED"
 
-    elif result == "MATCH" and similarity >= AUTO_APPROVE_THRESHOLD:
+    elif result == "MATCH" and similarity >= auto_approve_threshold:
+
         admin_result = "APPROVED"
 
     else:
+
         admin_result = "PENDING"
+
+    # =========================
+    # UPDATE existing log
+    # =========================
+
+    if existing:
+
+        cursor.execute("""
+            UPDATE logs
+            SET
+                name = ?,
+                ai_result = ?,
+                admin_result = ?,
+                time = ?,
+                image_path = ?,
+                similarity = ?,
+                attempt_count = ?
+            WHERE id = ?
+        """, (
+            name,
+            result,
+            admin_result,
+            now,
+            image_path,
+            similarity,
+            new_attempts,
+            log_id
+        ))
+
+        conn.commit()
+        conn.close()
+
+        return {
+            "status": admin_result,
+            "log_id": log_id,
+            "attempt_count": new_attempts,
+            "similarity": similarity
+        }
+
+    # =========================
+    # CREATE first log
+    # =========================
 
     cursor.execute("""
         INSERT INTO logs (
@@ -134,9 +257,10 @@ def save_log(uid, name, result, image_path=None, similarity=0.0):
             admin_result,
             time,
             image_path,
-            similarity
+            similarity,
+            attempt_count
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         uid,
         name,
@@ -144,11 +268,21 @@ def save_log(uid, name, result, image_path=None, similarity=0.0):
         admin_result,
         now,
         image_path,
-        similarity
+        similarity,
+        new_attempts
     ))
+
+    log_id = cursor.lastrowid
 
     conn.commit()
     conn.close()
+
+    return {
+        "status": admin_result,
+        "log_id": log_id,
+        "attempt_count": new_attempts,
+        "similarity": similarity
+    }
 
 
 def get_logs(limit=100):
@@ -165,7 +299,8 @@ def get_logs(limit=100):
             admin_result,
             time,
             image_path,
-            similarity
+            similarity,
+            attempt_count
         FROM logs
         ORDER BY time DESC
         LIMIT ?
@@ -193,7 +328,8 @@ def get_logs_by_date(date):
             admin_result,
             time,
             image_path,
-            similarity
+            similarity,
+            attempt_count
         FROM logs
         WHERE DATE(time) = ?
         ORDER BY time DESC
@@ -409,3 +545,37 @@ def reject_log(log_id):
     conn.close()
 
     return True
+
+def get_today_log(uid):
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            id,
+            uid,
+            name,
+            ai_result,
+            admin_result,
+            time,
+            image_path,
+            similarity,
+            attempt_count
+        FROM logs
+        WHERE uid = ?
+        AND DATE(time) = DATE('now', 'localtime')
+        ORDER BY time DESC
+        LIMIT 1
+    """, (uid,))
+
+    row = cursor.fetchone()
+
+    conn.close()
+
+    if row:
+        return dict(row)
+
+    return None

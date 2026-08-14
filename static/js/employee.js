@@ -15,9 +15,6 @@ document.getElementById("checkinModal");
 const video =
 document.getElementById("cameraPreview");
 
-const canvas =
-document.getElementById("captureCanvas");
-
 const capturedPreview =
 document.getElementById("capturedPreview");
 
@@ -32,7 +29,7 @@ document.getElementById("uidText");
 const checkTime =
 document.getElementById("checkTime");
 
-let stream = null;
+let cameraStreamUrl = null;
 
 // =========================
 // CHECK-IN SESSION
@@ -87,209 +84,135 @@ btnCheckin.onclick = async () => {
 
     modal.classList.add("show");
 
-    // =========================
-    // START CAMERA
-    // =========================
+// =========================
+// LIVE CAMERA NODE
+// =========================
 
-    try {
+try {
 
-        stream =
-            await navigator.mediaDevices.getUserMedia({
+    const response =
+        await fetch("/api/camera");
 
-                video: true,
+    if (!response.ok) {
 
-                audio: false
-
-            });
-
-        video.srcObject = stream;
-
-    }
-
-    catch(error) {
-
-        alert(
-            "Cannot access camera!"
+        throw new Error(
+            "No camera registered"
         );
 
-        console.error(error);
-
     }
 
+    const data =
+        await response.json();
+
+    cameraStreamUrl =
+        data.camera.video_url;
+
+    cameraPreview.src =
+        cameraStreamUrl;
+
+    console.log(
+        "[CHECK IN] Camera Node:",
+        cameraStreamUrl
+    );
+
+}
+catch (error) {
+
+    console.error(
+        "[CHECK IN] Camera Node error:",
+        error
+    );
+
+}
+
+console.log(
+    "[CHECK IN] Camera Node live stream started"
+);
+
 };
-
-
 // =========================
 // Capture Image
 // =========================
 
-btnCapture.onclick = () => {
+btnCapture.onclick = async () => {
 
     console.log(
         "[CHECK IN] Capture clicked"
-    );
-
-    if (!video.srcObject) {
-
-        alert("Camera is not active!");
-
-        return;
-
-    }
-
-    canvas.width =
-        video.videoWidth;
-
-    canvas.height =
-        video.videoHeight;
-
-    const context =
-        canvas.getContext("2d");
-
-    context.drawImage(
-        video,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    const imageData =
-        canvas.toDataURL(
-            "image/jpeg",
-            0.9
-        );
-    capturedImageData =
-    imageData;
-    if (rfidLocked) {
-
-    btnCheckinSubmit.disabled = false;
-
-}
-
-    // Hiển thị ảnh vừa chụp
-    capturedPreview.src =
-        imageData;
-
-    capturedPreview.style.display =
-        "block";
-
-    previewPlaceholder.style.display =
-        "none";
-
-    console.log(
-        "[CHECK IN] Image captured"
-    );
-
-    console.log(
-        "[CHECK IN] Image size:",
-        imageData.length
-    );
-
-};
-
-// =========================
-// SUBMIT CHECK IN
-// =========================
-
-btnCheckinSubmit.onclick = async () => {
-
-    if (!rfidLocked) {
-
-        alert("Please scan RFID first.");
-
-        return;
-
-    }
-
-    if (!capturedImageData) {
-
-        alert("Please capture image first.");
-
-        return;
-
-    }
-
-    const uid =
-        uidText.textContent.trim();
-
-    if (!uid) {
-
-        alert("Invalid RFID.");
-
-        return;
-
-    }
-
-    console.log(
-        "[CHECK IN] Sending to server:",
-        uid
     );
 
     try {
 
         const response =
             await fetch(
-                "/api/checkin",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-
-                        uid: uid,
-
-                        image:
-                            capturedImageData
-
-                    })
-                }
+                "/api/camera/test-capture"
             );
 
-        const data =
-            await response.json();
+        if (!response.ok) {
 
-        console.log(
-            "[CHECK IN] Server response:",
-            data
-        );
-
-        if (!response.ok || !data.success) {
-
-            alert(
-                data.message ||
-                "Check-in failed."
+            throw new Error(
+                "Camera capture failed"
             );
-
-            return;
 
         }
 
-        alert(
-            "Check-in successful!"
+        const blob =
+            await response.blob();
+
+        const imageUrl =
+            URL.createObjectURL(blob);
+
+        // =========================
+        // SHOW CAPTURED IMAGE
+        // =========================
+
+        capturedPreview.src =
+            imageUrl;
+
+        capturedPreview.style.display =
+            "block";
+
+        previewPlaceholder.style.display =
+            "none";
+
+        // =========================
+        // MARK CAPTURED
+        // =========================
+
+        capturedImageData =
+            imageUrl;
+
+        if (rfidLocked) {
+
+            btnCheckinSubmit.disabled =
+                false;
+
+        }
+
+        console.log(
+            "[CHECK IN] Camera Node image captured"
         );
 
-        closeModal();
+        console.log(
+            "[CHECK IN] Image size:",
+            blob.size
+        );
 
     }
     catch (error) {
 
         console.error(
-            "[CHECK IN] Submit error:",
+            "[CHECK IN] Capture error:",
             error
         );
 
         alert(
-            "Cannot connect to server."
+            "Cannot capture image"
         );
 
     }
 
 };
+
 
 
 // =========================
@@ -374,18 +297,7 @@ function closeModal(){
 
     rfidLocked = false;
 
-    if(stream){
-
-        stream.getTracks().forEach(
-            track => {
-                track.stop();
-            }
-        );
-
-        stream = null;
-    }
-
-    video.srcObject = null;
+    cameraPreview.src = "";
 
     capturedPreview.src = "";
 
@@ -495,13 +407,6 @@ btnCheckinSubmit.onclick = async () => {
 
     }
 
-    if (!capturedImageData) {
-
-        alert("Please capture image first.");
-
-        return;
-
-    }
 
     const uid =
         uidText.textContent.trim();
@@ -534,10 +439,7 @@ btnCheckinSubmit.onclick = async () => {
 
                     body: JSON.stringify({
 
-                        uid: uid,
-
-                        image:
-                            capturedImageData
+                        uid: uid
 
                     })
                 }
@@ -591,5 +493,153 @@ setInterval(
     updateCheckinUser,
     500
 );
- 
+// =========================
+// TODAY'S CHECK-IN LIST
+// =========================
 
+const todayCheckinsList =
+    document.getElementById("todayCheckinsList");
+
+
+async function loadTodayCheckins() {
+
+    if (!todayCheckinsList) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch("/api/checkins/today");
+
+        if (!response.ok) {
+            throw new Error(
+                "Failed to load today's check-ins"
+            );
+        }
+
+        const logs =
+            await response.json();
+
+        // Không có log
+        if (!logs.length) {
+
+            todayCheckinsList.innerHTML = `
+                <div class="checkin-empty">
+                    Chưa có lượt check-in hôm nay
+                </div>
+            `;
+
+            return;
+        }
+
+        todayCheckinsList.innerHTML =
+            logs.map(log => {
+
+                let statusIcon = "🟡";
+                let statusText = "PENDING";
+                let statusClass = "pending";
+
+                if (
+                    log.admin_result === "APPROVED"
+                ) {
+
+                    statusIcon = "🟢";
+                    statusText = "CHECKED IN";
+                    statusClass = "approved";
+
+                }
+                else if (
+                    log.admin_result === "REJECTED"
+                ) {
+
+                    statusIcon = "🔴";
+                    statusText = "REJECTED";
+                    statusClass = "rejected";
+                }
+
+                let aiText =
+                    log.ai_result === "MATCH"
+                        ? "AI PASS"
+                        : "AI CHECK";
+
+                let similarityText = "";
+
+                if (
+                    log.similarity !== null &&
+                    log.similarity !== undefined
+                ) {
+
+                    similarityText =
+                        `${Math.round(
+                            log.similarity * 100
+                        )}%`;
+                }
+
+                const time =
+                    log.time
+                        ? log.time.substring(11, 16)
+                        : "--:--";
+
+                return `
+                    <div class="checkin-item ${statusClass}">
+
+                        <div class="checkin-item-main">
+
+                            <div class="checkin-name">
+                                ${statusIcon}
+                                ${log.name || "Unknown"}
+                            </div>
+
+                            <div class="checkin-time">
+                                🕐 ${time}
+                            </div>
+
+                        </div>
+
+                        <div class="checkin-item-status">
+
+                            <span class="ai-status">
+                                ${aiText}
+                            </span>
+
+                            ${
+                                similarityText
+                                    ? `<span class="similarity">
+                                        ${similarityText}
+                                       </span>`
+                                    : ""
+                            }
+
+                            <span class="admin-status">
+                                ${statusText}
+                            </span>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join("");
+
+    }
+    catch (error) {
+
+        console.error(
+            "[CHECK IN] Failed to load today's logs:",
+            error
+        );
+
+    }
+}
+
+
+// Load immediately
+loadTodayCheckins();
+
+
+// Refresh every 2 seconds
+setInterval(
+    loadTodayCheckins,
+    2000
+);

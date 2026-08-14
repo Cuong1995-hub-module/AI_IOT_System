@@ -625,7 +625,7 @@ tbody tr:hover{
 
 /* Live Camera */
 
-.camera-preview video{
+.camera-preview img{
 
     width:100%;
 
@@ -677,6 +677,7 @@ tbody tr:hover{
 .capture-section{
 
     flex:1;
+    min-width:0;
 
 }
 
@@ -717,6 +718,21 @@ tbody tr:hover{
     cursor:pointer;
 
     transition:.25s;
+
+}
+.modal-buttons button:disabled{
+
+    background:#64748b !important;
+
+    color:#170a8d;
+
+    border:1px solid #94a3b8;
+
+    cursor:not-allowed;
+
+    opacity:1;
+
+    transform:none;
 
 }
 
@@ -819,5 +835,40 @@ tbody tr:hover{
     border-radius:10px;
 
     transition:width .3s ease;
+
+}
+
+/* =========================
+   FACE ADD PHOTO BUTTON
+========================= */
+
+#face-add{
+
+    background:#16a34a;
+
+    color:#ffffff;
+
+    border:2px solid #4ade80;
+
+    font-weight:600;
+
+    opacity:1;
+
+}
+
+
+/* Add Photo - disabled */
+
+#face-add:disabled{
+
+    background:#475569;
+
+    color:#cbd5e1;
+
+    border:2px solid #64748b;
+
+    cursor:not-allowed;
+
+    opacity:1;
 
 }

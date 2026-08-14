@@ -9,61 +9,92 @@ const cameraPlaceholder = document.getElementById("camera-placeholder");
 const capturedImage = document.getElementById("captured-image");
 const capturePlaceholder = document.getElementById("capture-placeholder");
 
-let stream = null;
 
 // ======================================================
 // Start Camera
+// ======================================================
+
+// ======================================================
+// Start Camera Node
 // ======================================================
 
 async function startCamera() {
 
     try {
 
-        stream = await navigator.mediaDevices.getUserMedia({
+        const response =
+            await fetch("/api/camera");
 
-            video: true,
-            audio: false
+        if (!response.ok) {
 
-        });
+            throw new Error(
+                "No camera registered"
+            );
 
-        cameraPreview.srcObject = stream;
+        }
 
-        cameraPreview.style.display = "block";
-        cameraPlaceholder.style.display = "none";
+        const data =
+            await response.json();
+
+        if (!data.success || !data.camera) {
+
+            throw new Error(
+                "Camera Node unavailable"
+            );
+
+        }
+
+        const videoUrl =
+            data.camera.video_url;
+
+        cameraPreview.src =
+            videoUrl;
+
+        cameraPreview.style.display =
+            "block";
+
+        cameraPlaceholder.style.display =
+            "none";
+
+        console.log(
+            "[FACE] Camera Node:",
+            videoUrl
+        );
 
     }
 
     catch (err) {
 
-        console.error(err);
+        console.error(
+            "[FACE] Camera Node error:",
+            err
+        );
 
-        alert("Cannot access camera.");
+        alert(
+            "Cannot connect to Camera Node."
+        );
 
     }
 
 }
 
+
+
 // ======================================================
-// Stop Camera
+// Stop Camera Node
 // ======================================================
 
 function stopCamera() {
 
-    if (stream) {
+    cameraPreview.src = "";
 
-        stream.getTracks().forEach(track => track.stop());
+    cameraPreview.style.display =
+        "none";
 
-        stream = null;
-
-    }
-
-    cameraPreview.srcObject = null;
-
-    cameraPreview.style.display = "none";
-    cameraPlaceholder.style.display = "flex";
+    cameraPlaceholder.style.display =
+        "flex";
 
 }
-
 // ======================================================
 // Open Face Modal
 // ======================================================
@@ -94,6 +125,8 @@ document.getElementById("face-cancel").addEventListener("click", () => {
 
     stopCamera();
 
+    resetFaceEnrollment();
+
     faceModal.style.display = "none";
 
 });
@@ -107,6 +140,7 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && faceModal.style.display === "flex") {
 
         stopCamera();
+        resetFaceEnrollment();
 
         faceModal.style.display = "none";
 
@@ -123,6 +157,7 @@ faceModal.addEventListener("click", (e) => {
     if (e.target === faceModal) {
 
         stopCamera();
+        resetFaceEnrollment();
 
         faceModal.style.display = "none";
 
@@ -151,7 +186,35 @@ const captureSteps = [
 let currentStep = 0;
 
 let capturedImages = [];
+// ======================================================
+// Reset Face Enrollment
+// ======================================================
 
+function resetFaceEnrollment() {
+
+    currentStep = 0;
+
+    capturedImages = [];
+
+    capturedImage.src = "";
+
+    capturedImage.style.display = "none";
+
+    capturePlaceholder.style.display = "flex";
+
+    captureButton.disabled = false;
+
+    retakeButton.disabled = true;
+
+    addButton.disabled = true;
+
+    finishButton.disabled = true;
+
+    finishButton.textContent = "✔ Finish";
+
+    updateCaptureStep();
+
+}
 
 // ======================================================
 // Elements
@@ -190,50 +253,110 @@ function updateCaptureStep() {
 }
 
 
-// ======================================================
-// Capture
-// ======================================================
+captureButton.addEventListener("click", async () => {
 
-captureButton.addEventListener("click", () => {
+    try {
 
-    if (!cameraPreview.videoWidth || !cameraPreview.videoHeight) {
+        console.log("[FACE] Capture clicked");
 
-        alert("Camera is not ready.");
+        const response = await fetch(
+            "/api/camera/test-capture"
+        );
 
-        return;
+        if (!response.ok) {
+
+            throw new Error(
+                "Camera capture failed"
+            );
+
+        }
+
+        const blob = await response.blob();
+
+        console.log(
+            "[FACE] Image received:",
+            blob.size,
+            "bytes"
+        );
+
+        // ==========================================
+        // Convert JPEG Blob → Base64 Data URL
+        // ==========================================
+
+        const reader = new FileReader();
+
+        reader.onloadend = () => {
+
+            const imageData =
+                reader.result;
+
+            // ======================================
+            // Validate
+            // ======================================
+
+            if (
+                typeof imageData !== "string" ||
+                !imageData.startsWith("data:image/")
+            ) {
+
+                console.error(
+                    "[FACE] Invalid image data"
+                );
+
+                alert("Invalid captured image.");
+
+                return;
+
+            }
+
+            console.log(
+                "[FACE] Base64 image length:",
+                imageData.length
+            );
+
+            // ======================================
+            // Show captured image
+            // ======================================
+
+            capturedImage.src =
+                imageData;
+
+            capturedImage.style.display =
+                "block";
+
+            capturePlaceholder.style.display =
+                "none";
+
+            // ======================================
+            // Enable buttons
+            // ======================================
+
+            retakeButton.disabled =
+                false;
+
+            addButton.disabled =
+                false;
+
+            captureButton.disabled =
+                true;
+
+        };
+
+        reader.readAsDataURL(blob);
 
     }
+    catch (error) {
 
-    const canvas = document.createElement("canvas");
+        console.error(
+            "[FACE] Capture error:",
+            error
+        );
 
-    canvas.width = cameraPreview.videoWidth;
-    canvas.height = cameraPreview.videoHeight;
+        alert(
+            "Cannot capture image."
+        );
 
-    const ctx = canvas.getContext("2d");
-
-    ctx.drawImage(
-        cameraPreview,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    const imageData = canvas.toDataURL("image/jpeg", 0.9);
-
-    capturedImage.src = imageData;
-
-    capturedImage.style.display = "block";
-
-    capturePlaceholder.style.display = "none";
-
-    // Enable Retake and Add Photo
-
-    retakeButton.disabled = false;
-
-    addButton.disabled = false;
-
-    captureButton.disabled = true;
+    }
 
 });
 
