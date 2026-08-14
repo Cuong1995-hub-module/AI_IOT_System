@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Employee Check In</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/employee.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>
+            Samsung Innovation Campus
+        </h1>
+
+        <div class="team">
+            SIC Nexus Embedded Team
+        </div>
+
+        <div class="subtitle">
+            AI - IoT Security System
+        </div>
+
+        <div class="status">
+
+            System Ready
+
+        </div>
+
+        <button id="btnCheckin">
+
+            CHECK IN
+
+        </button>
+
+        <div class="footer">
+
+            RFID • Face Recognition • AI • IoT
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ===========================
+     CHECK IN POPUP
+=========================== -->
+
+<div class="modal" id="checkinModal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            Employee Check In
+
+        </div>
+
+     <div class="camera-preview-row">
+
+    <!-- LIVE CAMERA -->
+    <div class="camera-panel">
+
+        <div class="panel-title">
+            Live Camera
+        </div>
+
+        <video
+            id="cameraPreview"
+            autoplay
+            playsinline>
+        </video>
+
+    </div>
+
+
+    <!-- CAPTURED IMAGE -->
+    <div class="camera-panel">
+
+        <div class="panel-title">
+            Captured Image
+        </div>
+
+        <img
+            id="capturedPreview"
+            src=""
+            alt="Captured Image"
+            style="display: none;">
+
+        <div
+            id="previewPlaceholder"
+            class="preview-placeholder">
+
+            No Image
+
+        </div>
+
+    </div>
+
+
+    <canvas
+        id="captureCanvas"
+        style="display: none;">
+    </canvas>
+
+</div>
+        <div class="info-box">
+
+    <div class="info-row">
+
+        <span>Name</span>
+
+        <p id="userName">
+
+            Waiting for RFID...
+
+        </p>
+
+    </div>
+
+    <div class="info-row">
+
+        <span>UID</span>
+
+        <p id="uidText">
+
+            Waiting RFID...
+
+        </p>
+
+    </div>
+
+    <div class="info-row">
+
+        <span>Time</span>
+
+        <p id="checkTime">
+
+            -- : -- : --
+        </p>
+
+    </div>
+
+</div>
+    <div class="button-group">
+
+    <button
+        class="capture-btn"
+        id="btnCapture">
+
+        Capture
+
+    </button>
+
+    <button
+        class="checkin-submit-btn"
+        id="btnCheckinSubmit"
+        disabled>
+
+        CHECK IN
+
+    </button>
+
+    <button
+        class="cancel-btn"
+        id="btnCancel">
+
+        Cancel
+
+    </button>
+
+</div>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/employee.js') }}"></script>
+
+</body>
+
+</html>

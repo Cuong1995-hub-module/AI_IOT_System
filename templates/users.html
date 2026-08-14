@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/users.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- ================= HEADER ================= -->
+
+    <header class="header">
+
+        <div class="title">
+
+            <h1>👥 User Management</h1>
+
+            <p>Manage RFID users in the system</p>
+
+        </div>
+
+        <div class="header-menu">
+
+            <a href="/dashboard" class="dashboard-btn">
+                🏠 Dashboard
+            </a>
+
+            <a href="/logout" class="logout-btn">
+                🚪 Logout
+            </a>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================= TOOLBAR ================= -->
+
+    <section class="toolbar">
+
+        <div class="search-box">
+
+            <input
+                type="text"
+                id="search"
+                placeholder="🔍 Search by UID or Name">
+
+        </div>
+
+        <button id="add-user-btn">
+
+            ➕ Add User
+
+        </button>
+
+    </section>
+
+
+    <!-- ================= INFO ================= -->
+
+    <div class="table-info">
+
+        <span>Total Users: <strong>{{ users|length }}</strong></span>
+
+    </div>
+
+
+    <!-- ================= TABLE ================= -->
+
+    <section class="table-section">
+
+        <table>
+
+            <thead>
+
+            <tr>
+
+                <th>UID</th>
+                <th>Name</th>
+                <th>Face</th>
+                <th>Action</th>
+
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for user in users %}
+
+            <tr>
+
+                <td>{{ user.uid }}</td>
+
+<td>{{ user.name }}</td>
+
+<td>
+
+{% if user.has_face %}
+
+    <span class="face-status has-face">
+        🟢 Registered
+    </span>
+
+{% else %}
+
+    <span class="face-status no-face">
+        🔴 Not Registered
+    </span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+   <button
+    class="face-btn"
+    data-uid="{{ user.uid }}"
+    data-name="{{ user.name }}">
+
+{% if user.has_face %}
+    🔄 Re-enroll
+{% else %}
+    📷 Camera
+{% endif %}
+
+</button>
+    <button
+        class="edit-btn"
+        data-uid="{{ user.uid }}"
+        data-name="{{ user.name }}">
+        ✏ Edit
+    </button>
+
+    <button
+        class="delete-btn"
+        data-uid="{{ user.uid }}">
+        🗑 Delete
+    </button>
+
+</td>
+
+            </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+</div>
+<!-- ================= ADD USER MODAL ================= -->
+
+<div id="user-modal" class="modal">
+
+    <div class="modal-content">
+
+        <h2>Add New User</h2>
+
+        <p>Register a new RFID card</p>
+
+        <label>👤 Full Name</label>
+
+        <input
+            type="text"
+            id="user-name"
+            placeholder="Enter full name">
+
+        <label>🏷 RFID UID</label>
+
+        <input
+            type="text"
+            id="rfid-uid"
+            placeholder="Waiting for RFID..."
+            readonly>
+
+        <small id="uid-status">
+            Please insert RFID card...
+        </small>
+
+        <div class="modal-buttons">
+
+            <button id="cancel-btn">
+                Cancel
+            </button>
+
+            <button id="save-btn" disabled>
+                Save
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= FACE MODAL ================= -->
+
+<div id="face-modal" class="modal">
+
+    <div class="face-modal-content">
+
+        <h2>📷 Face Enrollment</h2>
+
+        <p class="subtitle">
+            Register employee face
+        </p>
+
+        <div class="face-info">
+
+            <div>
+                <strong>👤 Name:</strong>
+                <span id="face-name"></span>
+            </div>
+
+            <div>
+                <strong>🆔 UID:</strong>
+                <span id="face-uid"></span>
+            </div>
+
+        </div>
+        <!-- Face Capture Step -->
+
+<div class="face-step">
+
+    <div class="step-title" id="capture-step">
+        Step 1 / 5
+    </div>
+
+    <div class="step-instruction" id="capture-instruction">
+        Look straight at the camera
+    </div>
+
+</div>
+
+<div class="face-progress">
+
+    <span id="progress-text">
+        0 / 5 Images
+    </span>
+
+    <div class="progress-bar">
+
+        <div
+            id="progress-fill"
+            class="progress-fill">
+        </div>
+
+    </div>
+
+</div>
+
+        <!-- Camera + Capture -->
+
+        <div class="face-preview-row">
+
+            <!-- Live Camera -->
+
+            <div class="camera-section">
+
+                <h3>🎥 Live Camera</h3>
+
+                <div class="camera-preview">
+
+                    <video
+                        id="camera-preview"
+                        autoplay
+                        playsinline
+                        muted>
+                    </video>
+
+                    <div id="camera-placeholder">
+
+                        Camera Preview
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Captured Image -->
+
+            <div class="capture-section">
+
+                <h3>🖼 Captured Image</h3>
+
+                <div class="capture-preview">
+
+                    <img
+                        id="captured-image"
+                        src=""
+                        alt="Captured Image">
+
+                    <div id="capture-placeholder">
+
+                        No Image
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Buttons -->
+<div class="modal-buttons">
+
+    <button id="face-capture">
+        📸 Capture
+    </button>
+
+    <button id="face-retake" disabled>
+        🔄 Retake
+    </button>
+
+    <button id="face-add" disabled>
+        ➕ Add Photo
+    </button>
+
+    <button id="face-finish" disabled>
+        ✔ Finish
+    </button>
+
+    <button id="face-cancel">
+        ✖ Close
+    </button>
+
+</div>
+
+    </div>
+
+</div>
+<script src="{{ url_for('static', filename='js/users.js') }}"></script>
+<script src="{{ url_for('static', filename='js/users.rfid.js') }}"></script>
+<script src="{{ url_for('static', filename='js/users.modal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/users.add.js') }}"></script>
+<script src="{{ url_for('static', filename='js/users.edit.js') }}"></script>
+<script src="{{ url_for('static', filename='js/users.delete.js') }}"></script>
+<script src="{{ url_for('static', filename='js/users.face.js') }}"></script>
+</body>
+
+</html>

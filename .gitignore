@@ -1,0 +1,44 @@
+# Python virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment / secrets
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Python test/cache
+.pytest_cache/
+.mypy_cache/
+
+# Model / temporary files
+*.tmp
+*.temp
+
+# Runtime database
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+
+# Face dataset / personal biometric data
+faces/
+
+# Runtime check-in images
+checkins/

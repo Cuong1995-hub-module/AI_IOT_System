@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Samsung AI-IoT Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+</head>
+
+<body>
+
+<!-- ================= HEADER ================= -->
+
+<header>
+
+
+    <div class="project-title">
+
+        <h1>Samsung Innovation Campus 2026</h1>
+
+        <h2>SIC Nexus Embedded Team</h2>
+
+        <p>AI - IoT Smart Access Control System</p>
+
+    </div>
+
+    <div class="top-right">
+
+        <div id="clock">
+            20:30:15
+        </div>
+
+        <div class="user">
+
+            👤 Admin
+
+        </div>
+
+        <a href="/logout">
+    <button>Logout</button>
+        </a>
+
+    </div>
+
+</header>
+
+<!-- ================= DASHBOARD INFO ================= -->
+
+<section class="summary">
+
+    <div class="logo-card">
+        <img src="{{ url_for('static', filename='images/ictu.png') }}"
+             alt="ICTU Logo">
+    </div>
+
+    <div class="info-card clickable" id="user-card">
+
+        <h3>👥 Users</h3>
+
+        <span>{{ users|length }}</span>
+
+        <p>Manage Users</p>
+
+    </div>
+
+    <div class="info-card system-card">
+
+        <h3>🟢 System Status</h3>
+
+        <div class="system-info">
+
+            <div class="system-item">
+                <label>🌐 IP Address</label>
+                <span>{{ ip }}</span>
+            </div>
+
+            <div class="system-item">
+                <label>📡 MQTT Server</label>
+                <span>{{ ip }}:1883</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="info-card attendance-card">
+
+    <h3>📊 Today's Attendance</h3>
+
+    <div class="attendance-stats">
+
+        <div class="attendance-item">
+
+           <div class="attendance-icon">🟢</div>
+
+            <div class="attendance-number" id="open-count">0</div>
+
+            <div class="attendance-label">OPEN</div>
+
+        </div>
+
+        <div class="attendance-item">
+
+            <div class="attendance-icon">🟡</div>
+
+            <div class="attendance-number" id="pending-count">0</div>
+
+            <div class="attendance-label">PENDING</div>
+
+        </div>
+
+        <div class="attendance-item">
+
+            <div class="attendance-icon">👥</div>
+
+            <div class="attendance-number" id="total-count">0</div>
+
+            <div class="attendance-label">TOTAL</div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</section>
+<!-- ================= MAIN ================= -->
+
+<main>
+
+   
+<!-- ================= FACE VERIFICATION ================= -->
+
+<section class="panel">
+
+    <div class="panel-title">
+
+        🤖 Face Verification
+
+    </div>
+
+    <div class="panel-content verification-panel">
+
+        <!-- ================= Main Layout ================= -->
+
+        <div class="verification-layout">
+
+            <!-- ================= Images ================= -->
+
+            <div class="verify-images">
+
+                <div class="verify-card">
+
+                    <h4>Registered Face</h4>
+
+                    <img
+                        id="registered-image"
+                        src="{{ url_for('static', filename='images/samsung-bg.jpeg') }}"
+                        alt="Registered Face">
+
+                </div>
+
+                <div class="verify-card">
+
+                    <h4>Current Check In</h4>
+
+                    <img
+                        id="captured-image"
+                        src="{{ url_for('static', filename='images/samsung-bg.jpeg') }}"
+                        alt="Captured Face">
+
+                </div>
+
+            </div>
+
+            <!-- ================= Information ================= -->
+
+            <div class="verification-info">
+
+                <h4>Employee Information</h4>
+
+                <div class="info-grid">
+
+                    <div class="info-item">
+
+                        <span class="label">👤 Employee</span>
+
+                        <span id="verify-name">Waiting...</span>
+
+                    </div>
+
+                    <div class="info-item">
+
+                        <span class="label">🆔 UID</span>
+
+                        <span id="verify-uid">-</span>
+
+                    </div>
+
+                    <div class="info-item">
+
+                        <span class="label">🤖 Similarity</span>
+
+                        <span id="verify-confidence">-</span>
+
+                    </div>
+
+                    <div class="info-item">
+
+                        <span class="label">🟢 Status</span>
+
+                        <span id="verify-result">Waiting...</span>
+
+                    </div>
+
+                    <div class="info-item full-width">
+
+                        <span class="label">🕒 Time</span>
+
+                        <span id="verify-time">-</span>
+
+                    </div>
+
+                </div>
+
+                <!-- ================= Buttons ================= -->
+
+                <div class="verify-buttons">
+
+                    <button id="btnApprove">
+
+                        ✔ Approve
+
+                    </button>
+
+                    <button id="btnReject">
+
+                        ✖ Reject
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= Access Log ================= -->
+
+<section class="panel">
+
+    <div class="panel-title">
+
+    <span>📋 Access Log</span>
+
+    <button id="export-csv-btn">
+        📄 Export CSV
+    </button>
+
+</div>
+
+    <div class="log-toolbar">
+
+        <input type="date" id="log-date">
+
+        <select id="filter-admin">
+            <option value="ALL">All Status</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+        </select>
+
+        <select id="filter-ai">
+            <option value="ALL">All AI</option>
+            <option value="OPEN">OPEN</option>
+            <option value="DENY">DENY</option>
+        </select>
+
+        <input
+            type="text"
+            id="log-search"
+            placeholder="🔍 Search Name / UID">
+
+    </div>
+
+    <div class="log" id="access-log">
+
+        {% for log in logs %}
+
+        <div class="log-item {{ 'success' if log['result'] == 'OPEN' else 'fail' }}"
+             data-id="{{ log['id'] }}"
+             data-name="{{ log['name'] }}"
+             data-uid="{{ log['uid'] }}"
+             data-ai="{{ log['ai_result'] }}"
+             data-admin="{{ log['admin_result'] }}"
+             data-time="{{ log['time'] }}">
+
+            <div class="log-name">
+                {{ log["name"] }}
+            </div>
+
+            <div class="log-status">
+                {{ log["admin_result"] }}
+            </div>
+
+            <div class="log-time">
+                🕒 {{ log["time"].split(" ")[1] }}
+            </div>
+
+            <div class="log-uid">
+                🆔 {{ log["uid"] }}
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+</main>
+
+<!-- ================= STATUS BAR ================= -->
+
+
+<div id="network-popup">
+
+    <div class="network-box">
+
+        <h2>ESP32 Connection</h2>
+
+        <hr>
+
+        <p><strong>Hostname</strong></p>
+
+        <div class="info">
+            sic-nexus.local
+        </div>
+
+        <p><strong>IPv4 Address</strong></p>
+
+        <div class="info">
+            {{ ip }}
+        </div>
+
+        <p><strong>MQTT Port</strong></p>
+
+        <div class="info">
+            1883
+        </div>
+
+        <button id="close-popup">
+            Close
+        </button>
+
+    </div>
+
+</div>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.clock.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.popup.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.logs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.verify.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.export.js') }}"></script>
+</body>
+
+</html>

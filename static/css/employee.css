@@ -1,0 +1,441 @@
+/* ===========================
+   RESET
+=========================== */
+
+*{
+
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Segoe UI",sans-serif;
+}
+
+/* ===========================
+   BODY
+=========================== */
+
+body{
+
+    width:100vw;
+    height:100vh;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    background-color:#eaf2ff;
+
+    background-image:
+        linear-gradient(
+            rgba(255,255,255,.08),
+            rgba(255,255,255,.02)
+        ),
+        url("../images/ssbg1.png");
+
+    background-size:cover;
+    background-position:center;
+
+    overflow:hidden;
+}
+
+/* ===========================
+   CONTAINER
+=========================== */
+
+.container{
+
+    width:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+/* ===========================
+   CARD
+=========================== */
+
+.card{
+
+    width:520px;
+
+    padding:55px;
+
+    border-radius:30px;
+
+    background:rgba(8,20,70,.45);
+
+    backdrop-filter:blur(20px);
+
+    border:1px solid rgba(255,255,255,.15);
+
+    box-shadow:0 25px 60px rgba(0,0,0,.45);
+
+    text-align:center;
+
+    color:white;
+}
+
+/* ===========================
+   TITLE
+=========================== */
+
+h1{
+
+    font-size:42px;
+
+    line-height:1.2;
+
+    margin-bottom:18px;
+}
+
+.team{
+
+    font-size:22px;
+
+    color:#67C8FF;
+
+    font-weight:600;
+
+    margin-bottom:15px;
+}
+
+.subtitle{
+
+    font-size:18px;
+
+    color:#DDEBFF;
+
+    margin-bottom:35px;
+}
+
+/* ===========================
+   STATUS
+=========================== */
+
+.status{
+
+    width:100%;
+
+    padding:16px;
+
+    border-radius:12px;
+
+    margin-bottom:35px;
+
+    background:rgba(255,255,255,.10);
+
+    color:#8CFFAE;
+
+    font-weight:bold;
+
+    font-size:18px;
+}
+
+/* ===========================
+   BUTTON
+=========================== */
+
+button{
+
+    width:100%;
+
+    padding:18px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:#0F6FFF;
+
+    color:white;
+
+    font-size:24px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.3s;
+}
+
+button:hover{
+
+    transform:translateY(-2px);
+
+    background:#2385FF;
+
+    box-shadow:0 0 25px rgba(33,150,243,.6);
+}
+
+/* ===========================
+   FOOTER
+=========================== */
+
+.footer{
+
+    margin-top:35px;
+
+    color:#C9DFFF;
+
+    font-size:15px;
+
+    letter-spacing:.5px;
+}
+/* ===========================
+   MODAL
+=========================== */
+
+.modal{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.65);
+
+    display:none;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:999;
+}
+
+.modal.show{
+
+    display:flex;
+}
+
+.modal-content{
+
+    width:760px;
+
+    background:#10224d;
+
+    border-radius:20px;
+
+    padding:35px;
+
+    color:white;
+
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+
+    animation:popup .25s ease;
+}
+
+@keyframes popup{
+
+    from{
+
+        transform:scale(.9);
+
+        opacity:0;
+    }
+
+    to{
+
+        transform:scale(1);
+
+        opacity:1;
+    }
+}
+
+/* ===========================
+   HEADER
+=========================== */
+
+.modal-header{
+
+    text-align:center;
+
+    font-size:34px;
+
+    font-weight:bold;
+
+    margin-bottom:25px;
+}
+
+/* ===========================
+   CAMERA
+=========================== */
+
+.camera-box{
+
+    width:100%;
+
+    aspect-ratio:16 / 9;
+
+    min-height:340px;
+
+    border-radius:18px;
+
+    overflow:hidden;
+
+    border:2px dashed #67C8FF;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    margin-bottom:25px;
+}
+.camera-box video{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:contain;
+
+    background:black;
+
+    border-radius:18px;
+}
+
+/* ===========================
+   UID
+=========================== */
+
+.info-box{
+
+    background:rgba(255,255,255,.08);
+
+    border-radius:14px;
+
+    padding:20px;
+
+    margin-bottom:30px;
+}
+
+.info-row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:10px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.info-row:last-child{
+
+    border-bottom:none;
+}
+
+.info-row span{
+
+    color:#67C8FF;
+
+    font-size:17px;
+
+    font-weight:600;
+}
+
+.info-row p{
+
+    color:white;
+
+    font-size:20px;
+
+    font-weight:bold;
+}
+
+/* ===========================
+   BUTTONS
+=========================== */
+
+.button-group{
+
+    display:flex;
+
+    gap:20px;
+}
+
+.capture-btn{
+
+    flex:1;
+
+    background:#0F6FFF;
+}
+.checkin-submit-btn{
+
+    flex:1;
+
+    background:#2e7d32;
+
+}
+
+.checkin-submit-btn:hover{
+
+    background:#43a047;
+
+}
+
+.checkin-submit-btn:disabled{
+
+    background:#555;
+
+    color:#aaa;
+
+    opacity:.6;
+
+    cursor:not-allowed;
+
+    transform:none;
+
+    box-shadow:none;
+}
+.cancel-btn{
+
+    flex:1;
+
+    background:#d32f2f;
+}
+
+.cancel-btn:hover{
+
+    background:#f44336;
+}
+.camera-preview-row {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+}
+
+.camera-panel {
+    flex: 1;
+    min-width: 0;
+}
+
+.panel-title {
+    text-align: center;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.camera-panel video,
+.camera-panel img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.preview-placeholder {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #aaa;
+    background: rgba(0, 0, 0, 0.2);
+}

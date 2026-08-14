@@ -1,0 +1,20 @@
+
+import cv2
+
+for i in range(4):
+    print(f"Testing camera {i}...")
+
+    cap = cv2.VideoCapture(i, cv2.CAP_V4L2)
+
+    if cap.isOpened():
+        ret, frame = cap.read()
+
+        if ret:
+            print(f"✅ Camera {i} OK")
+        else:
+            print(f"⚠ Camera {i} opened but cannot read frame")
+
+    else:
+        print(f"❌ Camera {i} cannot open")
+
+    cap.release()

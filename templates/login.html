@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Samsung AI-IOT Login</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/login.css') }}">
+
+</head>
+
+<body>
+
+<!-- ===========================
+     Loading Overlay
+=========================== -->
+
+<div id="loading-overlay">
+
+    <div class="loading-box">
+
+        <h2>Samsung Innovation Campus</h2>
+
+        <div class="boot-title">
+            AI - IoT Security System
+        </div>
+
+        <div class="terminal">
+
+            <div class="line" id="line1"></div>
+            <div class="line" id="line2"></div>
+            <div class="line" id="line3"></div>
+            <div class="line" id="line4"></div>
+            <div class="line" id="line5"></div>
+            <div class="line" id="line6"></div>
+            <div class="line" id="line7"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===========================
+     Login Panel
+=========================== -->
+
+<div class="overlay">
+
+    <div class="login-box">
+
+        <h1>
+            Samsung<br>
+            Innovation<br>
+            Campus 2026
+        </h1>
+
+        <div class="team">
+            SIC Nexus Embedded Team
+        </div>
+
+        <div class="subtitle">
+            AI - IoT Security System
+        </div>
+
+        <form method="POST">
+
+            <input
+                type="password"
+                name="password"
+                placeholder="System Access Key"
+                required>
+
+            {% if error %}
+            <div class="error">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <button id="login-btn">
+                START SYSTEM
+            </button>
+
+        </form>
+
+        <div class="divider">
+            OR
+        </div>
+
+        <a href="/employee" class="employee-btn">
+            Employee Access
+        </a>
+
+        <div class="footer">
+
+            RFID • Face Recognition • AI • IoT
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+
+</body>
+
+</html>
