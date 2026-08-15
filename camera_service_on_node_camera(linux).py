@@ -1,9 +1,9 @@
 import cv2
-import glob
 import time
 import socket
 import requests
 import threading
+import os
 
 from flask import Flask, Response
 
@@ -22,6 +22,24 @@ SERVER_HOST = "sic-server.local"
 SERVER_PORT = 5000
 REGISTER_INTERVAL = 30
 REGISTER_RETRY_INTERVAL = 5
+
+
+# ==========================================
+# CAMERA CONFIGURATION
+# ==========================================
+#sudo apt update
+#sudo apt install v4l-utils
+# Linux: Find your webcam device with:
+#     ls -l /dev/v4l/by-id/
+#
+# Copy the returned camera path and paste it below.
+# Example:
+#     /dev/v4l/by-id/usb-Logitech_USB_Camera-video-index0
+#
+# Use /dev/v4l/by-id/ instead of /dev/video0
+# because /dev/videoX may change between machines.
+
+CAMERA_DEVICE = "/dev/v4l/by-id/usb-Logitech_USB_Camera-video-index0"
 
 FRAME_WIDTH = 1280
 FRAME_HEIGHT = 720
@@ -211,119 +229,131 @@ def registration_loop():
 
 def find_camera():
 
-    devices = sorted(
-        glob.glob("/dev/video*")
+    print(
+        f"[CAMERA] Opening configured device:"
+        f" {CAMERA_DEVICE}"
     )
 
-    if not devices:
+    # ==========================================
+    # Check device exists
+    # ==========================================
+
+    if not CAMERA_DEVICE:
+        print(
+            "[CAMERA] CAMERA_DEVICE is not configured"
+        )
+        return None
+
+    if not os.path.exists(CAMERA_DEVICE):
 
         print(
-            "[CAMERA] No /dev/video* devices found"
+            f"[CAMERA] Device not found:"
+            f" {CAMERA_DEVICE}"
         )
 
         return None
 
-    print(
-        f"[CAMERA] Found devices: {devices}"
+    # ==========================================
+    # Open camera
+    # ==========================================
+
+    cap = cv2.VideoCapture(
+        CAMERA_DEVICE,
+        cv2.CAP_V4L2
     )
 
-    for device in devices:
+    if not cap.isOpened():
 
         print(
-            f"[CAMERA] Testing: {device}"
-        )
-
-        cap = cv2.VideoCapture(
-            device,
-            cv2.CAP_V4L2
-        )
-
-        if not cap.isOpened():
-
-            print(
-                f"[CAMERA] Cannot open: {device}"
-            )
-
-            cap.release()
-
-            continue
-
-        # ----------------------------------
-        # Configure camera
-        # ----------------------------------
-
-        cap.set(
-            cv2.CAP_PROP_FOURCC,
-            cv2.VideoWriter_fourcc(*"MJPG")
-        )
-
-        cap.set(
-            cv2.CAP_PROP_FRAME_WIDTH,
-            FRAME_WIDTH
-        )
-
-        cap.set(
-            cv2.CAP_PROP_FRAME_HEIGHT,
-            FRAME_HEIGHT
-        )
-
-        cap.set(
-            cv2.CAP_PROP_FPS,
-            FRAME_FPS
-        )
-
-        # ----------------------------------
-        # Test frame
-        # ----------------------------------
-
-        ret, frame = cap.read()
-
-        if ret and frame is not None:
-
-            actual_width = int(
-                cap.get(
-                    cv2.CAP_PROP_FRAME_WIDTH
-                )
-            )
-
-            actual_height = int(
-                cap.get(
-                    cv2.CAP_PROP_FRAME_HEIGHT
-                )
-            )
-
-            actual_fps = cap.get(
-                cv2.CAP_PROP_FPS
-            )
-
-            print(
-                f"[CAMERA] Selected: {device}"
-            )
-
-            print(
-                f"[CAMERA] Resolution: "
-                f"{actual_width}x{actual_height}"
-            )
-
-            print(
-                f"[CAMERA] FPS: "
-                f"{actual_fps}"
-            )
-
-            return cap
-
-        print(
-            f"[CAMERA] No valid frame: {device}"
+            f"[CAMERA] Cannot open:"
+            f" {CAMERA_DEVICE}"
         )
 
         cap.release()
 
-    print(
-        "[CAMERA] ERROR: "
-        "No working camera found"
+        return None
+
+    # ==========================================
+    # Configure camera
+    # ==========================================
+
+    cap.set(
+        cv2.CAP_PROP_FOURCC,
+        cv2.VideoWriter_fourcc(*"MJPG")
     )
 
-    return None
+    cap.set(
+        cv2.CAP_PROP_FRAME_WIDTH,
+        FRAME_WIDTH
+    )
+
+    cap.set(
+        cv2.CAP_PROP_FRAME_HEIGHT,
+        FRAME_HEIGHT
+    )
+
+    cap.set(
+        cv2.CAP_PROP_FPS,
+        FRAME_FPS
+    )
+
+    # ==========================================
+    # Test frame
+    # ==========================================
+
+    ret, frame = cap.read()
+
+    if not ret or frame is None:
+
+        print(
+            "[CAMERA] Camera opened but "
+            "cannot read frame"
+        )
+
+        cap.release()
+
+        return None
+
+    # ==========================================
+    # Read actual configuration
+    # ==========================================
+
+    actual_width = int(
+        cap.get(
+            cv2.CAP_PROP_FRAME_WIDTH
+        )
+    )
+
+    actual_height = int(
+        cap.get(
+            cv2.CAP_PROP_FRAME_HEIGHT
+        )
+    )
+
+    actual_fps = cap.get(
+        cv2.CAP_PROP_FPS
+    )
+
+    # ==========================================
+    # Success
+    # ==========================================
+
+    print(
+        f"[CAMERA] Selected:"
+        f" {CAMERA_DEVICE}"
+    )
+
+    print(
+        f"[CAMERA] Resolution:"
+        f" {actual_width}x{actual_height}"
+    )
+
+    print(
+        f"[CAMERA] FPS:"
+        f" {actual_fps}"
+    )
+
+    return cap
 
 
 # ==========================================
