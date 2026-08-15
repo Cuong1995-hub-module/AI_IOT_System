@@ -24,16 +24,14 @@ CREATE TABLE IF NOT EXISTS users(
 cur.execute("""
 CREATE TABLE IF NOT EXISTS logs(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-
     uid TEXT NOT NULL,
-
     name TEXT,
-
     ai_result TEXT NOT NULL,
-
     admin_result TEXT DEFAULT 'PENDING',
-
-    time TIMESTAMP NOT NULL
+    time TIMESTAMP NOT NULL,
+    image_path TEXT,
+    similarity REAL DEFAULT 0.0,
+    attempt_count INTEGER DEFAULT 1
 )
 """)
 
