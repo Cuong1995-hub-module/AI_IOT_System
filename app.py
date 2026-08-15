@@ -1,4 +1,5 @@
 # Standard Library
+from database.init_db import init_db
 import csv
 import datetime
 import io
@@ -1263,6 +1264,10 @@ def enroll_faces():
 # ================= MAIN =================
 if __name__ == "__main__":
 
+    print(">>> Initializing database")
+    init_db()
+    print(">>> Database ready")
+
     print(">>> Before start_mqtt")
     start_mqtt()
     print(">>> After start_mqtt")
@@ -1273,7 +1278,6 @@ if __name__ == "__main__":
         port=5000,
         debug=True,
         use_reloader=False,
-        
     )
 
 
