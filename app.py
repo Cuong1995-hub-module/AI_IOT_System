@@ -406,18 +406,37 @@ def api_checkin():
                 "image": today_log["image_path"]
             })
 
- # =========================
-# CAPTURE FROM CAMERA NODE
-# =========================
+    # =========================
+    # RECEIVE CAPTURED IMAGE
+    # =========================
 
-    image_bytes = capture_from_camera_node()
+    image_data = data.get("image")
 
-    if image_bytes is None:
+    if not image_data:
 
         return jsonify({
             "success": False,
-            "message": "Camera capture failed"
-    }), 503
+            "message": "No captured image"
+        }), 400
+
+    try:
+
+        if "," in image_data:
+            image_data = image_data.split(",", 1)[1]
+
+        image_bytes = base64.b64decode(image_data)
+
+    except Exception as e:
+
+        print(
+            "[CHECK IN] Image decode error:",
+            e
+        )
+
+        return jsonify({
+            "success": False,
+            "message": "Invalid image data"
+        }), 400
     # =========================
     # CREATE FILE NAME
     # =========================

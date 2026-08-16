@@ -37,6 +37,20 @@ let cameraStreamUrl = null;
 
 let rfidLocked = false;
 let capturedImageData = null;
+
+async function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onloadend = () => {
+            resolve(reader.result);
+        };
+
+        reader.onerror = reject;
+
+        reader.readAsDataURL(blob);
+    });
+}
 btnCheckinSubmit.disabled = true;
 
 // =========================
@@ -144,7 +158,10 @@ btnCapture.onclick = async () => {
 
         const response =
             await fetch(
-                "/api/camera/test-capture"
+                "/api/camera/test-capture?t=" + Date.now(),
+                {
+                    cache: "no-store"
+                }
             );
 
         if (!response.ok) {
@@ -158,11 +175,30 @@ btnCapture.onclick = async () => {
         const blob =
             await response.blob();
 
+        // =========================
+        // RELEASE OLD IMAGE URL
+        // =========================
+
+        if (capturedPreview.dataset.objectUrl) {
+
+            URL.revokeObjectURL(
+                capturedPreview.dataset.objectUrl
+            );
+
+        }
+
+        // =========================
+        // CREATE NEW IMAGE URL
+        // =========================
+
         const imageUrl =
             URL.createObjectURL(blob);
 
+        capturedPreview.dataset.objectUrl =
+            imageUrl;
+
         // =========================
-        // SHOW CAPTURED IMAGE
+        // SHOW NEW IMAGE
         // =========================
 
         capturedPreview.src =
@@ -179,7 +215,7 @@ btnCapture.onclick = async () => {
         // =========================
 
         capturedImageData =
-            imageUrl;
+            await blobToBase64(blob);
 
         if (rfidLocked) {
 
@@ -189,7 +225,7 @@ btnCapture.onclick = async () => {
         }
 
         console.log(
-            "[CHECK IN] Camera Node image captured"
+            "[CHECK IN] New image captured"
         );
 
         console.log(
@@ -298,6 +334,16 @@ function closeModal(){
     rfidLocked = false;
 
     cameraPreview.src = "";
+
+    if (capturedPreview.dataset.objectUrl) {
+
+    URL.revokeObjectURL(
+        capturedPreview.dataset.objectUrl
+    );
+
+    delete capturedPreview.dataset.objectUrl;
+
+    }
 
     capturedPreview.src = "";
 
@@ -439,7 +485,8 @@ btnCheckinSubmit.onclick = async () => {
 
                     body: JSON.stringify({
 
-                        uid: uid
+                        uid: uid,
+                        image: capturedImageData
 
                     })
                 }
