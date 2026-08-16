@@ -6,6 +6,9 @@ import io
 import subprocess
 import os
 import base64
+import socket
+import threading
+import time
 from ai.face_match import FaceMatcher
 import requests
 # Third-party
@@ -67,6 +70,87 @@ def get_local_ip():
 
 
 LOCAL_IP = get_local_ip()
+
+# =========================================================
+# CAMERA DISCOVERY SERVER
+# =========================================================
+
+DISCOVERY_PORT = 37020
+
+def camera_discovery_server():
+
+    sock = socket.socket(
+        socket.AF_INET,
+        socket.SOCK_DGRAM
+    )
+
+    sock.setsockopt(
+        socket.SOL_SOCKET,
+        socket.SO_REUSEADDR,
+        1
+    )
+
+    sock.bind(
+        ("0.0.0.0", DISCOVERY_PORT)
+    )
+
+    print(
+        f"[DISCOVERY] Listening on UDP "
+        f"{DISCOVERY_PORT}"
+    )
+
+    while True:
+
+        try:
+
+            data, address = sock.recvfrom(1024)
+
+            message = data.decode(
+                "utf-8",
+                errors="ignore"
+            ).strip()
+
+            print(
+                f"[DISCOVERY] Received "
+                f"'{message}' from {address[0]}"
+            )
+
+            if message == "SIC_CAMERA_DISCOVERY":
+
+                response = (
+                    f"SIC_SERVER|"
+                    f"{LOCAL_IP}|"
+                    f"5000"
+                )
+
+                sock.sendto(
+                    response.encode("utf-8"),
+                    address
+                )
+
+                print(
+                    f"[DISCOVERY] Reply -> "
+                    f"{address[0]} : "
+                    f"{response}"
+                )
+
+        except Exception as e:
+
+            print(
+                "[DISCOVERY] Error:",
+                e
+            )
+
+            time.sleep(1)
+
+
+discovery_thread = threading.Thread(
+    target=camera_discovery_server,
+    daemon=True
+)
+
+discovery_thread.start()
+
 def capture_from_camera_node():
 
     camera = app.config.get("CAMERA_NODE")
