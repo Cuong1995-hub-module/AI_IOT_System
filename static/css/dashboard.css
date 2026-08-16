@@ -466,17 +466,32 @@ main{
 
 }
 
-#export-csv-btn{
+.log-actions{
 
-    padding:8px 16px;
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+
+/* ==========================
+   Export Buttons
+========================== */
+
+.log-actions button{
+
+    height:40px;
+
+    padding:0 16px;
 
     border:none;
 
     border-radius:10px;
 
-    background:#1678FF;
-
-    color:white;
+    font-size:14px;
 
     font-weight:600;
 
@@ -486,13 +501,50 @@ main{
 
 }
 
+
+/* CSV */
+
+#export-csv-btn{
+
+    background:#2d3c70;
+
+    color:#DDEBFF;
+
+    border:1px solid rgba(255,255,255,.12);
+
+}
+
 #export-csv-btn:hover{
+
+    background:#3a4b82;
+
+    box-shadow:0 0 14px rgba(110,198,255,.25);
+
+    transform:translateY(-1px);
+
+}
+
+
+/* Daily Report */
+
+#generate-report-btn{
+
+    background:#1678FF;
+
+    color:white;
+
+}
+
+#generate-report-btn:hover{
 
     background:#2B8CFF;
 
     box-shadow:0 0 15px rgba(22,120,255,.45);
 
+    transform:translateY(-1px);
+
 }
+
 
 /* ==========================================================
    SCROLLBAR

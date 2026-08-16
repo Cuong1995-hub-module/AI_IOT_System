@@ -42,3 +42,9 @@ faces/
 
 # Runtime check-in images
 checkins/
+# Python cache
+__pycache__/
+*.pyc
+
+# Generated reports
+reports/

@@ -39,3 +39,46 @@ saveBtn.addEventListener("click", () => {
     }
 
 });
+
+// ============================================================
+// USER SEARCH
+// ============================================================
+
+const searchInput = document.getElementById("search");
+
+if (searchInput) {
+
+    searchInput.addEventListener("input", function () {
+
+        const keyword = this.value
+            .trim()
+            .toLowerCase();
+
+        const rows = document.querySelectorAll(
+            "table tbody tr"
+        );
+
+        rows.forEach(row => {
+
+            const uid = row
+                .cells[0]
+                ?.textContent
+                .toLowerCase() || "";
+
+            const name = row
+                .cells[1]
+                ?.textContent
+                .toLowerCase() || "";
+
+            const matched =
+                uid.includes(keyword) ||
+                name.includes(keyword);
+
+            row.style.display =
+                matched ? "" : "none";
+
+        });
+
+    });
+
+}

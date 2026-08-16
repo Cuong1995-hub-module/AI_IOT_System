@@ -17,8 +17,10 @@ from flask import (
     render_template,
     request,
     session,
-    send_from_directory
+    send_from_directory,
+    send_file
 )
+from report.report_generator import generate_daily_report
 from ai.runtime import runtime
 from ai.enrollment import FaceEnrollment
 import cv2
@@ -28,11 +30,7 @@ from ai.recognizer import FaceRecognizer
 
 # Local
 import mqtt_server
-from camera.stream import gen_frames
-from camera.webcam import (
-    get_camera_list,
-    open_camera,
-)
+
 from database.sqlite import (
     add_user,
     check_uid,
@@ -205,36 +203,7 @@ def api_checkins_today():
         for log in logs
     ])
 # ================= API =================
-@app.route("/api/cameras")
-def api_cameras():
 
-    if not session.get("login"):
-        return jsonify([])
-
-    return jsonify(get_camera_list())
-
-@app.route("/api/camera/select", methods=["POST"])
-def api_camera_select():
-
-    if not session.get("login"):
-        return jsonify({
-            "success": False
-        }), 401
-
-    data = request.get_json()
-
-    camera_id = int(data.get("camera", 0))
-
-    if open_camera(camera_id):
-
-        return jsonify({
-            "success": True
-        })
-
-    return jsonify({
-        "success": False,
-        "message": "Cannot open camera."
-    }), 400
 
 def get_display_similarity(similarity):
     if similarity is None:
@@ -823,6 +792,40 @@ def export_logs():
         }
 
     )
+
+@app.route("/api/report/daily")
+def daily_report():
+
+    if not session.get("login"):
+        return jsonify({
+            "success": False,
+            "message": "Unauthorized"
+        }), 401
+
+    date = request.args.get("date")
+
+    if not date:
+        date = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    try:
+        report_path = generate_daily_report(date)
+
+        return send_file(
+            report_path,
+            as_attachment=True,
+            download_name=f"SIC_Daily_Report_{date}.pdf",
+            mimetype="application/pdf"
+        )
+
+    except Exception as e:
+
+        print("[REPORT] Failed:", e)
+
+        return jsonify({
+            "success": False,
+            "message": "Failed to generate report."
+        }), 500
+
 @app.route("/api/checkin/clear", methods=["POST"])
 def api_checkin_clear():
 
@@ -883,13 +886,6 @@ def logout():
 
 # ================= CAMERA =================
 
-@app.route("/video_feed")
-def video_feed():
-
-    return Response(
-        gen_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame"
-    )
 
 
 @app.route("/api/enroll", methods=["POST"])
