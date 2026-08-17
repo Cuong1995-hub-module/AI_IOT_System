@@ -85,7 +85,7 @@
 
         </div>
 
-     <div class="camera-preview-row">
+    <div class="camera-preview-row">
 
     <!-- LIVE CAMERA -->
     <div class="camera-panel">
@@ -94,37 +94,25 @@
             Live Camera
         </div>
 
-        <img
-            id="cameraPreview"
-            src=""
-            alt="Live Camera">
+        <div class="face-guide">
 
-    </div>
+            <img
+                id="cameraPreview"
+                src=""
+                alt="Live Camera">
 
+            <div class="face-frame"></div>
+            <div class="face-frame"></div>
 
-    <!-- CAPTURED IMAGE -->
-    <div class="camera-panel">
+            <div class="face-target"></div>
 
-        <div class="panel-title">
-            Captured Image
-        </div>
-
-        <img
-            id="capturedPreview"
-            src=""
-            alt="Captured Image"
-            style="display: none;">
-
-        <div
-            id="previewPlaceholder"
-            class="preview-placeholder">
-
-            No Image
+            <div id="cameraInstruction" class="camera-instruction">
+                 Đưa mắt vào tâm khung và nhìn thẳng camera
+            </div>
 
         </div>
 
     </div>
-
 
     <canvas
         id="captureCanvas"
@@ -170,25 +158,6 @@
     </div>
 
 </div>
-    <div class="button-group">
-
-    <button
-        class="capture-btn"
-        id="btnCapture">
-
-        Capture
-
-    </button>
-
-    <button
-        class="checkin-submit-btn"
-        id="btnCheckinSubmit"
-        disabled>
-
-        CHECK IN
-
-    </button>
-
     <button
         class="cancel-btn"
         id="btnCancel">

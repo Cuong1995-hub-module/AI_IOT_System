@@ -491,36 +491,65 @@ def api_checkin():
             })
 
     # =========================
-    # RECEIVE CAPTURED IMAGE
+    # CAPTURE RAW IMAGE
     # =========================
 
-    image_data = data.get("image")
+    image_bytes = capture_from_camera_node()
 
-    if not image_data:
+    if image_bytes is None:
 
-        return jsonify({
-            "success": False,
-            "message": "No captured image"
-        }), 400
+            return jsonify({
+                "success": False,
+                "message":
+                "Camera capture failed. Please try again."
+            }), 500
 
-    try:
+    print(
+        f"[CHECK IN] RAW image captured: "
+        f"{len(image_bytes)} bytes"
+)
 
-        if "," in image_data:
-            image_data = image_data.split(",", 1)[1]
+    # =========================
+    # FACE DETECTION
+    # =========================
 
-        image_bytes = base64.b64decode(image_data)
+    frame = cv2.imdecode(
+        np.frombuffer(
+            image_bytes,
+            dtype=np.uint8
+    ),
+    cv2.IMREAD_COLOR
+)
 
-    except Exception as e:
+    if frame is None:
 
         print(
-            "[CHECK IN] Image decode error:",
-            e
-        )
+            "[AI] Failed to decode RAW image"
+    )
+
+        return jsonify({
+        "success": False,
+        "message":
+            "Invalid camera image. Please try again."
+    }), 400
+
+    faces = face_detector.detect(frame)
+
+    print(
+        f"[AI] YuNet detected "
+        f"{len(faces)} face(s)"
+)
+
+    if len(faces) == 0:
 
         return jsonify({
             "success": False,
-            "message": "Invalid image data"
-        }), 400
+            "status": "FACE_NOT_DETECTED",
+            "message":
+            "Face not detected. "
+            "Please position your face inside the frame and try again."
+    }), 400
+    
     # =========================
     # CREATE FILE NAME
     # =========================

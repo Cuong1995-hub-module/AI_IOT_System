@@ -4,10 +4,6 @@ document.getElementById("btnCheckin");
 const btnCancel =
 document.getElementById("btnCancel");
 
-const btnCapture =
-document.getElementById("btnCapture");
-const btnCheckinSubmit =
-document.getElementById("btnCheckinSubmit");
 
 const modal =
 document.getElementById("checkinModal");
@@ -36,22 +32,8 @@ let cameraStreamUrl = null;
 // =========================
 
 let rfidLocked = false;
-let capturedImageData = null;
-
-async function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-
-        reader.onloadend = () => {
-            resolve(reader.result);
-        };
-
-        reader.onerror = reject;
-
-        reader.readAsDataURL(blob);
-    });
-}
-btnCheckinSubmit.disabled = true;
+let captureInProgress = false;
+let captureTimer = null;
 
 // =========================
 // Open Check In
@@ -91,10 +73,14 @@ btnCheckin.onclick = async () => {
     // =========================
 
     rfidLocked = false;
+    captureInProgress = false;
 
-    capturedImageData = null;
+    if (captureTimer) {
+        clearTimeout(captureTimer);
+        captureTimer = null;
+}
 
-    btnCheckinSubmit.disabled = true;
+    captureTimer = null;
 
     modal.classList.add("show");
 
@@ -121,7 +107,7 @@ try {
     cameraStreamUrl =
         data.camera.video_url;
 
-    cameraPreview.src =
+    video.src =
         cameraStreamUrl;
 
     console.log(
@@ -144,110 +130,7 @@ console.log(
 );
 
 };
-// =========================
-// Capture Image
-// =========================
 
-btnCapture.onclick = async () => {
-
-    console.log(
-        "[CHECK IN] Capture clicked"
-    );
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/camera/test-capture?t=" + Date.now(),
-                {
-                    cache: "no-store"
-                }
-            );
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Camera capture failed"
-            );
-
-        }
-
-        const blob =
-            await response.blob();
-
-        // =========================
-        // RELEASE OLD IMAGE URL
-        // =========================
-
-        if (capturedPreview.dataset.objectUrl) {
-
-            URL.revokeObjectURL(
-                capturedPreview.dataset.objectUrl
-            );
-
-        }
-
-        // =========================
-        // CREATE NEW IMAGE URL
-        // =========================
-
-        const imageUrl =
-            URL.createObjectURL(blob);
-
-        capturedPreview.dataset.objectUrl =
-            imageUrl;
-
-        // =========================
-        // SHOW NEW IMAGE
-        // =========================
-
-        capturedPreview.src =
-            imageUrl;
-
-        capturedPreview.style.display =
-            "block";
-
-        previewPlaceholder.style.display =
-            "none";
-
-        // =========================
-        // MARK CAPTURED
-        // =========================
-
-        capturedImageData =
-            await blobToBase64(blob);
-
-        if (rfidLocked) {
-
-            btnCheckinSubmit.disabled =
-                false;
-
-        }
-
-        console.log(
-            "[CHECK IN] New image captured"
-        );
-
-        console.log(
-            "[CHECK IN] Image size:",
-            blob.size
-        );
-
-    }
-    catch (error) {
-
-        console.error(
-            "[CHECK IN] Capture error:",
-            error
-        );
-
-        alert(
-            "Cannot capture image"
-        );
-
-    }
-
-};
 
 
 
@@ -329,29 +212,17 @@ window.onclick = async (event) => {
 
 function closeModal(){
 
-    modal.classList.remove("show");
+   modal.classList.remove("show");
 
     rfidLocked = false;
+    captureInProgress = false;
 
-    cameraPreview.src = "";
-
-    if (capturedPreview.dataset.objectUrl) {
-
-    URL.revokeObjectURL(
-        capturedPreview.dataset.objectUrl
-    );
-
-    delete capturedPreview.dataset.objectUrl;
-
+    if (captureTimer) {
+        clearTimeout(captureTimer);
+        captureTimer = null;
     }
 
-    capturedPreview.src = "";
-
-    capturedPreview.style.display =
-        "none";
-
-    previewPlaceholder.style.display =
-        "flex";
+    video.src = "";
 
     // =========================
     // CLEAR RFID INFO
@@ -366,9 +237,7 @@ function closeModal(){
     checkTime.textContent =
         "-- : -- : --";
 
-capturedImageData = null;
 
-btnCheckinSubmit.disabled = true;
 }
 
 
@@ -415,11 +284,6 @@ async function updateCheckinUser() {
 
         checkTime.textContent =
             new Date().toLocaleTimeString();
-        if (capturedImageData) {
-
-    btnCheckinSubmit.disabled = false;
-
-}
 
         console.log(
             "[CHECK IN] RFID LOCKED:",
@@ -427,7 +291,7 @@ async function updateCheckinUser() {
             "| UID:",
             data.uid
         );
-
+        startCaptureCountdown();
     }
     catch (error) {
 
@@ -439,25 +303,51 @@ async function updateCheckinUser() {
     }
 
 }
+
+// =========================
+// CAPTURE COUNTDOWN
+// =========================
+
+function startCaptureCountdown() {
+
+    captureInProgress = true;
+
+    console.log(
+        "[CHECK IN] Preparing capture..."
+    );
+
+    console.log(
+        "[CHECK IN] Capture in: 3"
+    );
+
+    captureTimer = setTimeout(() => {
+
+        captureTimer = null;
+
+        console.log(
+            "[CHECK IN] Requesting server capture..."
+        );
+
+        submitCheckIn();
+
+    }, 2500);
+
+}
 // =========================
 // SUBMIT CHECK IN
 // =========================
 
-btnCheckinSubmit.onclick = async () => {
+async function submitCheckIn() {
 
-    if (!rfidLocked) {
-
-        alert("Please scan RFID first.");
-
-        return;
-
-    }
 
 
     const uid =
         uidText.textContent.trim();
 
     if (!uid || uid === "Waiting for RFID...") {
+
+        captureInProgress = false;
+        rfidLocked = false;
 
         alert("Invalid RFID.");
 
@@ -485,8 +375,8 @@ btnCheckinSubmit.onclick = async () => {
 
                     body: JSON.stringify({
 
-                        uid: uid,
-                        image: capturedImageData
+                        uid: uid
+                    
 
                     })
                 }
@@ -497,15 +387,16 @@ btnCheckinSubmit.onclick = async () => {
 
         if (!response.ok || !data.success) {
 
+            captureInProgress = false;
+            rfidLocked = false;
+
             alert(
                 data.message ||
                 "Check-in failed."
             );
 
             return;
-
         }
-
         console.log(
             "[CHECK IN] Server accepted"
         );
@@ -515,6 +406,7 @@ btnCheckinSubmit.onclick = async () => {
         );
 
         closeModal();
+        captureInProgress = false;
 
     }
     catch (error) {
@@ -527,7 +419,7 @@ btnCheckinSubmit.onclick = async () => {
         alert(
             "Cannot connect to server."
         );
-
+        captureInProgress = false;
     }
 
 };
